@@ -20,7 +20,7 @@ class mysocket:
                 self.port +=1
                 continue
         self.server_addr = add
-        self.status = None
+        self.status = 'ready'
         self.info = self._get_local_info()
         print(self.info)
 
