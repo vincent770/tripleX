@@ -6,7 +6,9 @@ from myThreading import MyThread #重写的线程类
 import time
 from queue import Queue
 import pyperclip
-from menubar import Bar
+
+from PyQt5.QtWidgets import QApplication
+from qttray import Window_tray
 
 server_add = ('152.136.147.50', 10086)
 
@@ -14,12 +16,9 @@ class Client:
     def __init__(self, server_add):
         self.socket = mysocket(server_add)
         
-        # 将按键的动作回调传入ui类，当点击按键时调用带动作参数的回调函数（创建新线程运行）
-        self.bar = Bar(name='tripleX', 
-                icon='../../media/Icon.icns',
-                cbs = lambda cmd:self.actions(cmd)
-                # cbs=lambda cmd:MyThread(self.actions, cmd)
-                )
+        # # 将按键的动作回调传入ui类，当点击按键时调用带动作参数的回调函数（创建新线程运行）
+        self.window = Window_tray( lambda cmd:self.actions(cmd) )
+    
         # 线程锁 进程信号（True:线程正常执行中，False:请求当前线程结束）
         self.lock = threading.Lock()
         self.rx_queue = Queue() #进程间通信
@@ -27,6 +26,7 @@ class Client:
         self.sub_threads = []
 
         self.history = ''
+        self.recent_msg = ''
         MyThread(self.main)
 
     def _stop_sub_threads(self):
@@ -43,30 +43,38 @@ class Client:
         '''
         self._stop_sub_threads()
         if cmd in ('COPY', 'PASTE'):
-            tx_str = pyperclip.paste()   
+            tx_str = pyperclip.paste()
+            self.recent_msg = tx_str
+            self.window.set_menu_visibility(cmd)
             action_thread = MyThread( self.socket.report, 
                                     cmd, self.rx_queue, tx_str)
             self.sub_threads.append(action_thread)
-
             # action_thread.join()
-            # if self.socket.get_status() != 'ready':
-            #     try:
-            #         cases = {
-            #         'recive success': '接收成功!',
-            #         'send success':'发送成功!',
-            #         'timeout':'超时!',
-            #         'cancled':'已取消',
-            #         'ready':''
-            #         }
-            #         state = cases[self.socket.get_status()]
-            #     except: # todo: 字典取值错误处理
-            #         state = self.socket.get_status()
-            #     finally:     
-            #         choice = self.bar.alert(title='tripleX', message = state, ok='ok')
-            #         self.socket.set_status('ready')
+
+        elif cmd == 'CANCEL':
+            self.window.set_menu_visibility('INIT')
+            self.socket.set_status('cancel')
         elif cmd == 'SHOW':
-            print(self.history)
-            self.bar.alert(title='history', message=self.history )
+            self.window.show()
+            self.window.write_to_textEdit(self.history)
+
+    def user_notifing(self):
+        if self.socket.get_status() != 'ready':
+            try:
+                cases = {
+                'recive success': '接收成功!',
+                'send success':'发送成功!',
+                'timeout':'超时!',
+                'cancel':'已取消!',
+                }
+                state = cases[self.socket.get_status()]
+            except: # todo: 字典取值错误处理
+                state = self.socket.get_status()
+            finally:     
+                self.socket.set_status('ready')
+                self.window.set_menu_visibility('INIT')
+                self.window.tray_notify(title='tripleX', message=state )
+
 
     def main(self):
         print('client started..')
@@ -76,10 +84,12 @@ class Client:
                 pyperclip.copy(data)
 
                 t = time.strftime('%H:%M:%S   ',time.localtime(time.time()))
-                self.history = t + 'recived:' + data+'\r\n'
+                self.history += t + '\r\nrecived:' + data+'\r\n'
 
+            self.user_notifing()
             time.sleep(0.5)
+import sys
+app = QApplication(sys.argv)
 
 client = Client(server_add)
-
-client.bar.run()
+sys.exit(app.exec())
