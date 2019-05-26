@@ -5,12 +5,12 @@ from PyQt5.QtCore import QSize
 
 class Window_tray(QMainWindow):
 
-    def __init__(self,cbs):
+    def __init__(self,cbs,title=''):
         # Be sure to call the super class method
         QMainWindow.__init__(self)
  
         self.setMinimumSize(QSize(480, 80))             # Set sizes
-        self.setWindowTitle("tripleX")  # Set a title
+        self.setWindowTitle("tripleX "+title)  # Set a title
         self.label1 = QLabel("Welcome to use tripleX.", self)
         # self.check_box = QCheckBox('History message')
 
@@ -67,7 +67,7 @@ class Window_tray(QMainWindow):
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
-        self.hide()
+        # self.hide()
 
     def set_menu_visibility(self, state):
         if state == 'INIT':
@@ -110,11 +110,14 @@ class Window_tray(QMainWindow):
         reply = QMessageBox.information(self, title, message,
                     QMessageBox.Yes|QMessageBox.No,QMessageBox.Yes)
         print(reply)
+        return reply
  
 if __name__ == "__main__":
 
     import sys
     app = QApplication(sys.argv)
     sys_tray = Window_tray(print)
+
+    sys_tray.pop_a_alert('hello','sds')
 
     sys.exit(app.exec())

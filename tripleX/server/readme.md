@@ -1,3 +1,3 @@
 # tripleX server
 
-    nohup python3 tripleX.py&
+    nohup python3 server.py&

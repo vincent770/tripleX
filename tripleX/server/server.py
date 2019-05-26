@@ -6,15 +6,15 @@ import json
 import logging
 
 logging.basicConfig(level=logging.INFO,
-                    filename='tripleX.log',
-                    datefmt='%Y/%m/%d %H:%M:%S',
+                    # filename='tripleX.log',
+                    datefmt='%Y/%m/%d %H:%M:%S  ',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(module)s - %(message)s')
 class Server:
     def __init__(self):
         # hostIP = socket.gethostbyname(socket.gethostname())
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
-        self.port = 10086
+        self.port = 49322
         while True:
             try:
                 # 尝试绑定未被占用的端口，直到成功
@@ -29,7 +29,8 @@ class Server:
         self.info['port'] = self.port
         logging.info('server info:{}'.format(self.info) )
         logging.info('Triple X server is started on port:{}'.format(self.port) )
-
+        print('Triple X server is started on port:{}'.format(self.port) )
+    
     def _get_local_info(self):
         import uuid
         mac=uuid.UUID(int = uuid.getnode()).hex[-12:] 
@@ -80,16 +81,17 @@ class Server:
             if(len(sender_request) != 1):
                 logging.error('number of sender(s) is not 1, abord.')
             else:
-                reciver_addrs = [msg['addr'] for msg in reciver_requests]
+                # reciver_addrs = [msg['addr'] for msg in reciver_requests]
 
-                self.s.sendto( bytes( json.dumps(reciver_addrs), encoding='utf-8' ),
+                # self.s.sendto( bytes( json.dumps(reciver_addrs), encoding='utf-8' ),
+                #                 sender_request[0]['scoure address'])
+
+                self.s.sendto( bytes( json.dumps(reciver_requests), encoding='utf-8' ),
                                 sender_request[0]['scoure address'])
 
-                logging.info('requests handled.\r\nfrom:{}\r\nto:{} \r\nCommunication addr is:{}'.format(
-                            sender_request[0]['addr'], # 局域网发送者地址
-                            reciver_addrs,  # 局域网接收者地址
-                            sender_request[0]['scoure address'] ) ) # 公网发送者地址
-
+                logging.info('requests handled \r\n from:{} \r\n to:{} \r\n'.format(
+                    sender_request, reciver_requests
+                ) )
 
 x_server =  Server()
 x_server.server_mainloop()
